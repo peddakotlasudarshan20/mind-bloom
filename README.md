@@ -97,3 +97,4 @@ The project is configured for Firebase Hosting. To deploy:
 
 MindBloom features a highly polished, responsive "glassmorphism" aesthetic with a primary focus on accessibility and calming visuals. The color palette utilizes soft gradients, dark mode by default to reduce eye strain, and vibrant accent colors for interactivity.
 # mind-bloom
+https://mindbloom-9b7b5.web.app/
