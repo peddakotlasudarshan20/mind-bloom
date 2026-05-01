@@ -1,0 +1,115 @@
+/* ============================================
+   MindBloom — Animations & Transitions
+   ============================================ */
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.88); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes crisisPulse {
+  0%   { box-shadow: 0 0 0 0 var(--c-crisis-glow); }
+  50%  { box-shadow: 0 0 0 10px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+@keyframes breatheIn {
+  0%   { transform: scale(0.65); opacity: 0.6; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes breatheOut {
+  0%   { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.65); opacity: 0.6; }
+}
+@keyframes breatheHold { 0%, 100% { transform: scale(1); opacity: 1; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes flamePulse {
+  0%, 100% { transform: scale(1) rotate(-3deg); }
+  50%       { transform: scale(1.15) rotate(3deg); }
+}
+@keyframes emojiBounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  30%       { transform: translateY(-6px) scale(1.1); }
+}
+@keyframes confettiFall {
+  0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(120px) rotate(720deg); opacity: 0; }
+}
+@keyframes wave1 { 0%,100%{height:8px}50%{height:24px} }
+@keyframes wave2 { 0%,100%{height:16px}50%{height:6px} }
+@keyframes wave3 { 0%,100%{height:12px}50%{height:28px} }
+@keyframes wave4 { 0%,100%{height:20px}50%{height:8px} }
+@keyframes wave5 { 0%,100%{height:6px}50%{height:18px} }
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.94) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes checkDraw {
+  from { stroke-dashoffset: 100; }
+  to   { stroke-dashoffset: 0; }
+}
+@keyframes progressFill { from { width: 0; } }
+@keyframes slideInRight {
+  from { opacity:0; transform: translateX(20px); }
+  to   { opacity:1; transform: translateX(0); }
+}
+
+/* ---- Applied Classes ---- */
+.breathing-circle {
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--c-primary-light) 0%, var(--c-primary) 60%, transparent 100%);
+  box-shadow: 0 0 60px var(--c-primary-glow), 0 0 120px rgba(124,110,245,0.1);
+}
+.breathing-circle.inhale  { animation: breatheIn var(--breathe-duration,4s) ease-in-out forwards; }
+.breathing-circle.exhale  { animation: breatheOut var(--breathe-duration,4s) ease-in-out forwards; }
+.breathing-circle.hold    { animation: breatheHold var(--breathe-duration,4s) ease-in-out forwards; }
+.flame-icon { display:inline-block; animation: flamePulse 1.5s ease-in-out infinite; }
+.emoji-bounce { animation: emojiBounce 0.5s ease; }
+.confetti-piece { position:absolute; width:8px; height:8px; border-radius:2px; animation:confettiFall 1.2s ease-in forwards; }
+.skeleton {
+  background: linear-gradient(90deg, var(--c-card) 25%, var(--c-card-hover) 50%, var(--c-card) 75%);
+  background-size: 400px 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+.gradient-text {
+  background: linear-gradient(135deg, var(--c-primary-light), var(--c-accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.card-lift { transition: transform var(--transition-base), box-shadow var(--transition-base); }
+.card-lift:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.shimmer-hover { position:relative; overflow:hidden; }
+.shimmer-hover::after {
+  content:''; position:absolute; inset:0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.04) 50%, transparent 60%);
+  transform: translateX(-100%); transition: transform 0.6s ease;
+}
+.shimmer-hover:hover::after { transform: translateX(100%); }
+.stagger-children > * { opacity:0; animation: fadeSlideUp 0.4s ease forwards; }
+.stagger-children > *:nth-child(1) { animation-delay:0.05s; }
+.stagger-children > *:nth-child(2) { animation-delay:0.10s; }
+.stagger-children > *:nth-child(3) { animation-delay:0.15s; }
+.stagger-children > *:nth-child(4) { animation-delay:0.20s; }
+.stagger-children > *:nth-child(5) { animation-delay:0.25s; }
+.stagger-children > *:nth-child(n+6) { animation-delay:0.30s; }
+.waveform { display:flex; align-items:center; gap:3px; height:32px; }
+.waveform .bar { width:3px; background:var(--c-primary-light); border-radius:3px; opacity:0.7; }
+.waveform.playing .bar:nth-child(5n+1){animation:wave1 0.9s ease-in-out infinite;}
+.waveform.playing .bar:nth-child(5n+2){animation:wave2 1.1s ease-in-out infinite;}
+.waveform.playing .bar:nth-child(5n+3){animation:wave3 0.8s ease-in-out infinite;}
+.waveform.playing .bar:nth-child(5n+4){animation:wave4 1.2s ease-in-out infinite;}
+.waveform.playing .bar:nth-child(5n+5){animation:wave5 1.0s ease-in-out infinite;}
+.check-svg path { stroke-dasharray:100; stroke-dashoffset:100; animation:checkDraw 0.5s ease forwards; }

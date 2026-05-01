@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MindBloom — AI-Powered Mental Wellness</title>
+  <meta name="description" content="MindBloom: Your AI-powered personal mental wellness assistant.">
+  <meta name="theme-color" content="#7C6EF5">
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- Feather Icons -->
+  <script src="https://unpkg.com/feather-icons"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/components.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* Onboarding full-screen */
+    #onboarding-container { min-height:100vh; background:var(--c-bg); }
+    .onboard-screen {
+      display:flex; flex-direction:column; justify-content:center;
+      min-height:100vh; padding:40px 24px; max-width:420px; margin:0 auto;
+    }
+    /* Background mesh gradient */
+    body::before {
+      content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(124,110,245,0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 50% at 80% 80%, rgba(82,229,163,0.05) 0%, transparent 60%);
+    }
+    .app-container { position:relative; z-index:1; }
+    /* Splash loader */
+    #splash {
+      position:fixed; inset:0; background:var(--c-bg); z-index:1000;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap:16px; transition:opacity 0.5s ease;
+    }
+    #splash .splash-logo { font-family:'Outfit',sans-serif; font-size:2.5rem; font-weight:800; }
+    #splash .splash-sub { color:var(--c-text-muted); font-size:0.9rem; }
+    #splash .splash-bar { width:120px; height:3px; background:var(--c-border); border-radius:3px; overflow:hidden; margin-top:8px; }
+    #splash .splash-fill { height:100%; background:linear-gradient(90deg,var(--c-primary),var(--c-accent)); border-radius:3px; animation:progressFill 1.2s ease forwards; width:100%; }
+    @keyframes progressFill { from{width:0} to{width:100%} }
+
+    /* Auth Screen */
+    #auth-screen {
+      display:none; position:fixed; inset:0; background:var(--c-bg); z-index:900;
+      align-items:center; justify-content:center; padding:24px;
+      animation:fadeIn 0.4s ease;
+    }
+    #auth-screen.visible { display:flex; }
+    .auth-card {
+      width:100%; max-width:400px;
+      background:var(--c-card); border:1px solid var(--c-border);
+      border-radius:var(--radius-xl); padding:40px 32px;
+      box-shadow:var(--shadow-lg);
+    }
+    .auth-logo { text-align:center; margin-bottom:32px; }
+    .auth-logo .icon { font-size:3rem; display:block; margin-bottom:8px; }
+    .auth-logo h1 { font-family:'Outfit',sans-serif; font-size:1.8rem; font-weight:800; }
+    .auth-tabs { display:flex; gap:4px; background:var(--c-surface); border-radius:var(--radius-full); padding:4px; margin-bottom:24px; }
+    .auth-tab { flex:1; padding:9px; border-radius:var(--radius-full); font-size:0.85rem; font-weight:600; font-family:'Outfit',sans-serif; color:var(--c-text-muted); cursor:pointer; text-align:center; transition:all 0.2s ease; border:none; background:none; }
+    .auth-tab.active { background:var(--c-primary); color:white; }
+    .auth-error { color:var(--c-crisis); font-size:0.82rem; margin-top:8px; display:none; }
+    .divider-text { display:flex; align-items:center; gap:12px; margin:16px 0; color:var(--c-text-faint); font-size:0.8rem; }
+    .divider-text::before, .divider-text::after { content:''; flex:1; height:1px; background:var(--c-border); }
+    .btn-google { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:13px; border-radius:var(--radius-full); border:1.5px solid var(--c-border); background:var(--c-card); color:var(--c-text); font-family:'Outfit',sans-serif; font-weight:600; font-size:0.9rem; cursor:pointer; transition:all 0.2s ease; }
+    .btn-google:hover { background:var(--c-card-hover); border-color:var(--c-border-light); }
+    .btn-google img { width:20px; height:20px; }
+  </style>
+</head>
+<body>
+
+<!-- Splash Screen -->
+<div id="splash">
+  <div style="color:var(--c-primary); margin-bottom:8px;"><i data-feather="sun" width="56" height="56" stroke-width="1.5"></i></div>
+  <div class="splash-logo gradient-text">MindBloom</div>
+  <div class="splash-sub">AI-Powered Wellness Assistant</div>
+  <div class="splash-bar"><div class="splash-fill"></div></div>
+</div>
+
+<!-- Auth Screen -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <span class="icon" style="color:var(--c-primary);"><i data-feather="sun" width="48" height="48" stroke-width="1.5"></i></span>
+      <h1 class="gradient-text">MindBloom</h1>
+      <p style="color:var(--c-text-muted);font-size:0.85rem;margin-top:4px">Your wellness journey starts here</p>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-signin" onclick="AuthUI.showTab('signin')">Sign In</button>
+      <button class="auth-tab" id="tab-signup" onclick="AuthUI.showTab('signup')">Create Account</button>
+    </div>
+
+    <!-- Sign In -->
+    <div id="form-signin">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-input" id="si-email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" id="si-password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <div class="auth-error" id="si-error"></div>
+      <button class="btn btn-primary btn-full mt-4" id="si-btn" onclick="AuthUI.signIn()">Sign In →</button>
+    </div>
+
+    <!-- Sign Up -->
+    <div id="form-signup" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Your Name</label>
+        <input type="text" class="form-input" id="su-name" placeholder="First name" autocomplete="given-name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-input" id="su-email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" id="su-password" placeholder="Min. 6 characters" autocomplete="new-password">
+      </div>
+      <div class="auth-error" id="su-error"></div>
+      <button class="btn btn-primary btn-full mt-4" id="su-btn" onclick="AuthUI.signUp()">Create Account →</button>
+    </div>
+
+    <div class="divider-text">or</div>
+    <button class="btn-google" onclick="AuthUI.googleSignIn()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+      Continue with Google
+    </button>
+    <p style="text-align:center;font-size:0.75rem;color:var(--c-text-faint);margin-top:20px">Your data is encrypted and private. We never sell personal information.</p>
+  </div>
+</div>
+
+<!-- Onboarding (shown to new users) -->
+<div id="onboarding-container" class="hidden"></div>
+
+<!-- Main App Shell -->
+<div id="app-shell" class="hidden">
+
+  <!-- Crisis FAB (Hidden for now to focus on core AI flow) -->
+  <button class="crisis-fab hidden" id="crisis-fab" aria-label="I need help now" style="display:none">
+    <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.15 12 19.79 19.79 0 0 1 1.08 3.4 2 2 0 0 1 3.05 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.09 9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21 16z"/></svg>
+    I Need Help
+  </button>
+
+  <!-- Top Bar -->
+  <header class="page-topbar">
+    <div class="logo-mark">
+      <div class="logo-icon" style="color:var(--c-primary); display:flex; align-items:center;"><i data-feather="sun" width="20" height="20" stroke-width="2"></i></div>
+      MindBloom
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" id="theme-toggle" aria-label="Toggle theme" title="Toggle theme"></button>
+    </div>
+  </header>
+
+  <!-- App Container -->
+  <div class="app-container">
+
+    <!-- HOME SCREEN -->
+    <section class="screen" id="screen-home" role="main" aria-label="Home"></section>
+
+    <!-- MOOD SCREEN -->
+    <section class="screen" id="screen-mood" aria-label="Mood Tracker"></section>
+
+    <!-- JOURNAL SCREEN -->
+    <section class="screen" id="screen-journal" aria-label="Journal"></section>
+
+    <!-- CHAT SCREEN -->
+    <section class="screen" id="screen-chat" aria-label="AI Chat"></section>
+
+    <!-- MEDITATE SCREEN -->
+    <section class="screen" id="screen-meditate" aria-label="Meditation"></section>
+
+    <!-- TOOLS SCREEN -->
+    <section class="screen" id="screen-tools" aria-label="CBT Tools"></section>
+
+    <!-- COMMUNITY SCREEN -->
+    <section class="screen" id="screen-community" aria-label="Community"></section>
+
+  </div><!-- /app-container -->
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav" aria-label="Main navigation">
+    <div class="nav-item" data-screen="home" id="nav-home" tabindex="0">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Home</span>
+    </div>
+    <div class="nav-item" data-screen="mood" id="nav-mood" tabindex="0">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+      <span>Mood</span>
+    </div>
+    <div class="nav-item" data-screen="chat" id="nav-chat" tabindex="0">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span>Chat</span>
+    </div>
+    <div class="nav-item" data-screen="journal" id="nav-journal" tabindex="0">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      <span>Journal</span>
+    </div>
+    <div class="nav-item" data-screen="meditate" id="nav-meditate" tabindex="0" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      <span>Meditate</span>
+    </div>
+    <div class="nav-item" data-screen="tools" id="nav-tools" tabindex="0" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      <span>Tools</span>
+    </div>
+    <div class="nav-item" data-screen="community" id="nav-community" tabindex="0" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Community</span>
+    </div>
+  </nav>
+
+  <!-- Toast Container -->
+  <div id="toast-container" aria-live="polite"></div>
+
+</div><!-- /app-shell -->
+
+<!-- Crisis & Safety Plan Modals (injected by crisis.js) -->
+<div id="crisis-modals"></div>
+
+<!-- Scripts -->
+<script src="js/firebase-config.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/firebase-service.js"></script>
+<script src="js/onboarding.js"></script>
+<script src="js/mood.js"></script>
+<script src="js/ai-chat.js"></script>
+<script src="js/journal.js"></script>
+<script src="js/meditation.js"></script>
+<script src="js/app.js"></script>
+<script>
+  /* ---- Auth UI ---- */
+  const AuthUI = {
+    showTab(tab) {
+      document.getElementById('form-signin').style.display = tab==='signin' ? '' : 'none';
+      document.getElementById('form-signup').style.display = tab==='signup' ? '' : 'none';
+      document.getElementById('tab-signin').classList.toggle('active', tab==='signin');
+      document.getElementById('tab-signup').classList.toggle('active', tab==='signup');
+    },
+    setLoading(btnId, loading) {
+      const btn = document.getElementById(btnId);
+      if (btn) { btn.disabled = loading; btn.textContent = loading ? 'Please wait…' : (btnId==='si-btn'?'Sign In →':'Create Account →'); }
+    },
+    showError(id, msg) {
+      const el = document.getElementById(id);
+      if (el) { el.textContent = msg; el.style.display = msg ? '' : 'none'; }
+    },
+    async signIn() {
+      const email = document.getElementById('si-email')?.value.trim();
+      const pass  = document.getElementById('si-password')?.value;
+      if (!email || !pass) { this.showError('si-error','Please enter email and password.'); return; }
+      this.setLoading('si-btn', true);
+      try { await FBService.signIn(email, pass); }
+      catch(e) { this.showError('si-error', this.friendlyError(e)); this.setLoading('si-btn', false); }
+    },
+    async signUp() {
+      const name  = document.getElementById('su-name')?.value.trim();
+      const email = document.getElementById('su-email')?.value.trim();
+      const pass  = document.getElementById('su-password')?.value;
+      if (!name||!email||!pass) { this.showError('su-error','All fields are required.'); return; }
+      if (pass.length < 6) { this.showError('su-error','Password must be at least 6 characters.'); return; }
+      this.setLoading('su-btn', true);
+      try { await FBService.signUp(email, pass, name); }
+      catch(e) { this.showError('su-error', this.friendlyError(e)); this.setLoading('su-btn', false); }
+    },
+    async googleSignIn() {
+      try { await FBService.signInGoogle(); }
+      catch(e) { alert(this.friendlyError(e)); }
+    },
+    friendlyError(e) {
+      const map = {
+        'auth/user-not-found':'No account found with this email.',
+        'auth/wrong-password':'Incorrect password.',
+        'auth/email-already-in-use':'An account with this email already exists.',
+        'auth/invalid-email':'Please enter a valid email address.',
+        'auth/weak-password':'Password is too weak — use at least 6 characters.',
+        'auth/popup-closed-by-user':'Sign-in popup was closed.',
+      };
+      return map[e.code] || e.message || 'Something went wrong. Please try again.';
+    }
+  };
+
+  /* ---- Global Error Handler for Debugging ---- */
+  window.onerror = function(msg, url, line, col, error) {
+    const errEl = document.createElement('div');
+    errEl.style.cssText = 'position:fixed;top:0;left:0;right:0;background:red;color:white;z-index:9999;padding:20px;font-family:monospace;white-space:pre-wrap;';
+    errEl.innerText = `Error: ${msg}\nLine: ${line}\nCol: ${col}\nStack: ${error?.stack}`;
+    document.body.appendChild(errEl);
+  };
+
+  /* ---- Boot sequence ---- */
+  document.addEventListener('DOMContentLoaded', () => {
+
+    // Hide splash, then check auth
+    setTimeout(() => {
+      const splash = document.getElementById('splash');
+      if (splash) { splash.style.opacity='0'; setTimeout(()=>splash.remove(),500); }
+
+      // Init app core services
+      App.initTheme();
+      App.bindNav();
+
+      // Listen for auth state
+      FBService.onAuthChange(async (user) => {
+        if (user) {
+          // Signed in — hide auth screen
+          document.getElementById('auth-screen').classList.remove('visible');
+          // Sync data from Firestore (non-blocking)
+          FBService.syncAll().catch(console.warn);
+          // Check onboarding
+          const onboarded = await FBService.isOnboarded().catch(()=>MB.isOnboarded());
+          if (!onboarded) {
+            App.showOnboarding();
+          } else {
+            App.showApp();
+            App.navigate(App.getHashScreen()||'home');
+          }
+        } else {
+          // Not signed in — show auth
+          document.getElementById('onboarding-container').classList.add('hidden');
+          document.getElementById('app-shell').classList.add('hidden');
+          document.getElementById('auth-screen').classList.add('visible');
+        }
+      });
+    }, 1400);
+
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' ') item.click(); });
+    });
+    
+    // Replace feather icons on first load
+    if (window.feather) { feather.replace(); }
+  });
+
+  /* ---- Add sign-out to nav topbar ---- */
+  document.addEventListener('DOMContentLoaded', () => {
+    const topbarActions = document.querySelector('.topbar-actions');
+    if (topbarActions) {
+      const signOutBtn = document.createElement('button');
+      signOutBtn.className = 'icon-btn';
+      signOutBtn.title = 'Sign Out';
+      signOutBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>';
+      signOutBtn.addEventListener('click', async () => {
+        if (confirm('Sign out of MindBloom?')) {
+          await FBService.signOut();
+          MB.store.clear();
+        }
+      });
+      topbarActions.appendChild(signOutBtn);
+    }
+  });
+</script>
+</body>
+</html>
